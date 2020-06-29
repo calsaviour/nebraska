@@ -1,4 +1,5 @@
 import { Icon } from '@iconify/react';
+import { Box } from '@material-ui/core';
 import AppBar from '@material-ui/core/AppBar';
 import IconButton from '@material-ui/core/IconButton';
 import ListItemIcon from '@material-ui/core/ListItemIcon';
@@ -10,6 +11,7 @@ import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
 import AccountCircle from '@material-ui/icons/AccountCircle';
 import CreateOutlined from '@material-ui/icons/CreateOutlined';
+import DOMPurify from 'dompurify';
 import React from 'react';
 import _ from 'underscore';
 import API from '../api/API';
@@ -26,16 +28,23 @@ const useStyles = makeStyles(theme => ({
   },
   header: {
     marginBottom: theme.spacing(1),
-    background: process.env.REACT_APP_APPBAR_BG || theme.palette.primary.contrastText,
+    background: (config) => config && config.appBarColor === 'dark' ?
+      theme.palette.dark : theme.palette.light,
+    color: (config) => config && config.appBarColor === 'dark' ?
+      theme.palette.light : theme.palette.dark
   },
+  svgContainer: {
+    '& svg': {maxHeight: '3rem'}
+  }
 }));
 
 export default function Header() {
-  const classes = useStyles();
   const [config, setConfig] = React.useState(null);
   const projectLogo = _.isEmpty(nebraskaLogo) ? null : nebraskaLogo;
 
   const [menuAnchorEl, setMenuAnchorEl] = React.useState(null);
+  const [cachedConfig, setCachedConfig] = React.useState(JSON.parse(localStorage.getItem('nebraska_config')));
+  const classes = useStyles(cachedConfig);
 
   function handleMenu(event) {
     setMenuAnchorEl(event.currentTarget);
@@ -50,6 +59,13 @@ export default function Header() {
     if (!config) {
       API.getConfig()
         .then(config => {
+          const cacheConfig = {
+            title: config.title,
+            logo: config.logo,
+            appBarColor: config.header_style
+          };
+          localStorage.setItem('nebraska_config', JSON.stringify(cacheConfig));
+          setCachedConfig(cacheConfig);
           setConfig(config);
         })
         .catch(error => {
@@ -58,13 +74,21 @@ export default function Header() {
     }
   },
   [config]);
-
   return (
     <AppBar position='static' className={classes.header}>
       <Toolbar>
-        {projectLogo &&
+        {cachedConfig && cachedConfig.logo ?
+          <Box className={classes.svgContainer}>
+            <div dangerouslySetInnerHTML={{__html: DOMPurify.sanitize(cachedConfig.logo)}}/>
+          </Box> :
           <Icon icon={projectLogo} height={45} />
         }
+        {cachedConfig && cachedConfig.title !== '' &&
+          <Typography variant='h6' className={classes.title}>
+            {cachedConfig.title}
+          </Typography>
+        }
+
         {config && config.access_management_url &&
           <IconButton
             aria-label='User menu'

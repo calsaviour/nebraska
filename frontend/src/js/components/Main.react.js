@@ -41,6 +41,13 @@ const nebraskaTheme = createMuiTheme({
   }
 });
 
+const appBarTheme = createMuiTheme({
+  palette: {
+    dark: '#000000',
+    light: '#ffffff'
+  }
+});
+
 export default function Main() {
   React.useEffect(() => {
     document.title = process.env.REACT_APP_PROJECT_NAME;
@@ -50,7 +57,9 @@ export default function Main() {
   return (
     <ThemeProvider theme={nebraskaTheme}>
       <CssBaseline />
-      <Header />
+      <ThemeProvider theme={appBarTheme}>
+        <Header />
+      </ThemeProvider>
       <Container component="main">
         <Switch>
           <Route path='/' exact component={MainLayout} />
